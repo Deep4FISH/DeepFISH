@@ -51,3 +51,28 @@ The latter deep-learning framework is supposed to be more efficient than the seg
    * **LowRes_13434_overlapping_pairs.h5** : 13434 pairs of overlapping chromosomes generated from the two previous images. This dataset is intended to train a supervised learning algorithm to resolve overlapping chromosomes. The dataset is stored as a numpy array and saved in a hdf5 file. Compared to the DAPI and Cy3 images,the resolution was decreased by two.
    * **overlapping_chromosomes_examples.h5**: smaller dataset (~2000 images). The resolution of the images is the same than the DAPI/Cy3 images.
    * **UltraSmall-COCO-Dataset_125_images-json.zip** a very small dataset with 125 images of overlapping chromosomes and their annotation file in COCO format generated online with makesense.ai
+
+## Cytogenetic image multi-channel viewer
+
+The repository now ships a full PyQt5 application dedicated to cytogenetic imaging workflows. Slides are represented by folders that contain numbered metaphases, themselves populated with per-channel sub-directories (e.g. `dapi/`, `cy3/`, `cy5/`, `fitc/`). The viewer arranges the content as a digital *table lumineuse* and exposes dedicated tooling for preprocessing, alignment, segmentation, configuration, and batch execution.
+
+### Launching the application
+
+```bash
+python -m viewer /chemin/vers/votre/dataset
+```
+
+If no argument is supplied the viewer scans a list of common dataset roots (`jpp21_downloaded_data`, `Raw images/jpp21`, `dataset`, the current folder) and, failing that, generates a small synthetic dataset so the interface remains functional out-of-the-box.
+
+> ℹ️ **Wayland users :** sous GNOME Wayland, forcez `QT_QPA_PLATFORM=wayland` (ou `=xcb`) avant le lancement pour supprimer l'avertissement Qt concernant `XDG_SESSION_TYPE`.
+
+### Interface overview
+
+The main window is split into an image canvas with navigation controls (slide/metaphase selectors and per-channel toggles) and a side panel containing four tabs:
+
+* **Preprocessing** – per-channel white top-hat filtering, background subtraction (median or mode), percentile-based histogram stretching, display mode selection (grayscale, inverted, pseudo-colour) and HSV colour pickers for the latter. Results can be saved on disk, and channel-specific parameters are persisted in `config.json`.
+* **Alignment** – manual registration of every spectral component relative to DAPI using arrow buttons or numeric spin boxes. Offsets are stored in `alignment.json` and can be propagated to all metaphases on the slide.
+* **Segmentation** – adaptive thresholding (`cv2.adaptiveThreshold`) with adjustable block size and offset, live previews, overlay/contour/filled display modes, undo/redo enabled brush and eraser tools, object size filtering and optional removal of border-touching regions. Masks can be saved as TIFF/PNG files.
+* **Batch** – select a dataset root, tick preprocessing/alignment/segmentation steps, and run the pipeline for every slide and metaphase while tracking progress and textual logs.
+
+All parameters edited through the interface are written back to the slide-level `config.json`/`alignment.json` files when the application closes, making it straightforward to resume a session. The same configuration is reused by the batch executor so manual fine-tuning directly feeds the automated pipeline.
